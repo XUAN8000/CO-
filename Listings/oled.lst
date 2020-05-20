@@ -1,0 +1,265 @@
+C51 COMPILER V9.57.0.0   OLED                                                              05/17/2020 12:44:22 PAGE 1   
+
+
+C51 COMPILER V9.57.0.0, COMPILATION OF MODULE OLED
+OBJECT MODULE PLACED IN .\Objects\oled.obj
+COMPILER INVOKED BY: E:\Keil_v5\C51\BIN\C51.EXE oled.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\oled
+                    -.lst) TABS(2) OBJECT(.\Objects\oled.obj)
+
+line level    source
+
+   1          
+   2          //1.初始化
+   3          //2.资源库
+   4          //3.功能函数
+   5          //4.主函数
+   6          //5.头文件 
+   7          
+   8          #include "iap15w4k58s4.h" //15w4k58s4头文件
+   9          #include "font.h"//基本字库
+  10          
+  11          #define XLevelL   0x00
+  12          #define XLevelH   0x10
+  13          #define XLevel    ((XLevelH&0x0F)*16+XLevelL)
+  14          #define Max_Column  128
+  15          #define Max_Row   64
+  16          #define Brightness  0xCF 
+  17          
+  18          
+  19          sbit LCD_SCL=P4^7;  
+  20          sbit LCD_SDA=P4^6;
+  21          sbit LCD_RST=P4^5; 
+  22          sbit LCD_DC =P4^4;
+  23          
+  24          
+  25                            
+  26                 
+  27          void LCD_WrDat(unsigned char dat)
+  28          {
+  29   1        unsigned char i=8;
+  30   1      //  LCD_CS=0;;
+  31   1        LCD_DC=1;;
+  32   1        LCD_SCL=0;;
+  33   1        //;;    
+  34   1        while(i--)
+  35   1        {
+  36   2          if(dat&0x80){LCD_SDA=1;}
+  37   2          else{LCD_SDA=0;}
+  38   2          LCD_SCL=1; 
+  39   2          ;;;
+  40   2          //;;            
+  41   2          LCD_SCL=0;;    
+  42   2          dat<<=1;    
+  43   2        }
+  44   1        //LCD_CS=1;
+  45   1      }
+  46          void LCD_WrCmd(unsigned char cmd)
+  47          {
+  48   1        unsigned char i=8;
+  49   1        
+  50   1        //LCD_CS=0;;
+  51   1        LCD_DC=0;;
+  52   1        LCD_SCL=0;;
+  53   1        //;;   
+  54   1        while(i--)
+C51 COMPILER V9.57.0.0   OLED                                                              05/17/2020 12:44:22 PAGE 2   
+
+  55   1        {
+  56   2          if(cmd&0x80){LCD_SDA=1;}
+  57   2          else{LCD_SDA=0;;}
+  58   2          LCD_SCL=1;;
+  59   2          ;;;
+  60   2          //;;             
+  61   2          LCD_SCL=0;;    
+  62   2          cmd<<=1;;   
+  63   2        }   
+  64   1        //LCD_CS=1;
+  65   1      }
+  66          void LCD_Set_Pos(unsigned char x, unsigned char y)
+  67          { 
+  68   1        LCD_WrCmd(0xb0+y);
+  69   1        LCD_WrCmd(((x&0xf0)>>4)|0x10);
+  70   1        LCD_WrCmd((x&0x0f)|0x00); 
+  71   1      } 
+  72          void LCD_Fill(unsigned char bmp_dat)
+  73          {
+  74   1        unsigned char y,x;
+  75   1        
+  76   1        for(y=0;y<8;y++)
+  77   1        {
+  78   2          LCD_WrCmd(0xb0+y);
+  79   2          LCD_WrCmd(0x01);
+  80   2          LCD_WrCmd(0x10);
+  81   2          for(x=0;x<X_WIDTH;x++)
+  82   2            LCD_WrDat(bmp_dat);
+  83   2        }
+  84   1      }
+  85          void LCD_CLS(void)
+  86          {
+  87   1        unsigned char y,x;  
+  88   1        for(y=0;y<8;y++)
+  89   1        {
+  90   2          LCD_WrCmd(0xb0+y);
+  91   2          LCD_WrCmd(0x01);
+  92   2          LCD_WrCmd(0x10); 
+  93   2          for(x=0;x<X_WIDTH;x++)
+  94   2            LCD_WrDat(0);
+  95   2        }
+  96   1      }
+  97          void LCD_DLY_ms(unsigned int ms)
+  98          {                         
+  99   1        unsigned int a;
+ 100   1        while(ms)
+ 101   1        {
+ 102   2          a=1335;
+ 103   2          while(a--);
+ 104   2          ms--;
+ 105   2        }
+ 106   1        return;
+ 107   1      } 
+ 108          void LCD_Init(void)        
+ 109          {  
+ 110   1        LCD_SCL=1;
+ 111   1        //LCD_CS=1; //预制SLK和SS为高电平   
+ 112   1        LCD_RST=0;
+ 113   1        LCD_DLY_ms(50);
+ 114   1        LCD_RST=1;
+ 115   1        
+ 116   1        //从上电到下面开始初始化要有足够的时间，即等待RC复位完毕   
+C51 COMPILER V9.57.0.0   OLED                                                              05/17/2020 12:44:22 PAGE 3   
+
+ 117   1        
+ 118   1        LCD_WrCmd(0xae);//--turn off oled panel
+ 119   1        LCD_WrCmd(0x00);//---set low column address
+ 120   1        LCD_WrCmd(0x10);//---set high column address
+ 121   1        LCD_WrCmd(0x40);//--set start line address  Set Mapping RAM Display Start Line (0x00~0x3F)
+ 122   1        LCD_WrCmd(0x81);//--set contrast control register
+ 123   1        LCD_WrCmd(0xcf); // Set SEG Output Current Brightness
+ 124   1        LCD_WrCmd(0xa1);//--Set SEG/Column Mapping     0xa0左右反置 0xa1正常
+ 125   1        LCD_WrCmd(0xc8);//Set COM/Row Scan Direction   0xc0上下反置 0xc8正常
+ 126   1        LCD_WrCmd(0xa6);//--set normal display
+ 127   1        LCD_WrCmd(0xa8);//--set multiplex ratio(1 to 64)
+ 128   1        LCD_WrCmd(0x3f);//--1/64 duty
+ 129   1        LCD_WrCmd(0xd3);//-set display offset Shift Mapping RAM Counter (0x00~0x3F)
+ 130   1        LCD_WrCmd(0x00);//-not offset
+ 131   1        LCD_WrCmd(0xd5);//--set display clock divide ratio/oscillator frequency
+ 132   1        LCD_WrCmd(0x80);//--set divide ratio, Set Clock as 100 Frames/Sec
+ 133   1        LCD_WrCmd(0xd9);//--set pre-charge period
+ 134   1        LCD_WrCmd(0xf1);//Set Pre-Charge as 15 Clocks & Discharge as 1 Clock
+ 135   1        LCD_WrCmd(0xda);//--set com pins hardware configuration
+ 136   1        LCD_WrCmd(0x12);
+ 137   1        LCD_WrCmd(0xdb);//--set vcomh
+ 138   1        LCD_WrCmd(0x40);//Set VCOM Deselect Level
+ 139   1        LCD_WrCmd(0x20);//-Set Page Addressing Mode (0x00/0x01/0x02)
+ 140   1        LCD_WrCmd(0x02);//
+ 141   1        LCD_WrCmd(0x8d);//--set Charge Pump enable/disable
+ 142   1        LCD_WrCmd(0x14);//--set(0x10) disable
+ 143   1        LCD_WrCmd(0xa4);// Disable Entire Display On (0xa4/0xa5)
+ 144   1        LCD_WrCmd(0xa6);// Disable Inverse Display On (0xa6/a7) 
+ 145   1        LCD_WrCmd(0xaf);//--turn on oled panel
+ 146   1        LCD_Fill(0x00);  //初始清屏
+ 147   1        LCD_Set_Pos(0,0);   
+ 148   1      } 
+ 149          
+ 150          //==============================================================
+ 151          //函数名：LCD_P6x8Str(unsigned char x,unsigned char y,unsigned char *p)
+ 152          //功能描述：写入一组标准ASCII字符串
+ 153          //参数：显示的位置（x,y），y为页范围0～7，要显示的字符串
+ 154          //返回：无
+ 155          //==============================================================  
+ 156          void LCD_P6x8Str(unsigned char x,unsigned char y,unsigned char ch[])
+ 157          {
+ 158   1        unsigned char c=0,i=0,j=0;      
+ 159   1        while (ch[j]!='\0')
+ 160   1        {    
+ 161   2          c =ch[j]-32;
+ 162   2          if(x>126){x=0;y++;}
+ 163   2          LCD_Set_Pos(x,y);    
+ 164   2          for(i=0;i<6;i++)     
+ 165   2            LCD_WrDat(F6x8[c][i]);  
+ 166   2          x+=6;
+ 167   2          j++;
+ 168   2        }
+ 169   1      }
+ 170          //==============================================================
+ 171          //函数名：LCD_P8x16Str(unsigned char x,unsigned char y,unsigned char *p)
+ 172          //功能描述：写入一组标准ASCII字符串
+ 173          //参数：显示的位置（x,y），y为页范围0～7，要显示的字符串
+ 174          //返回：无
+ 175          //============================================================== 
+ 176           
+ 177          void LCD_P8x16Str(unsigned char x,unsigned char y,unsigned char ch[])
+ 178          {
+C51 COMPILER V9.57.0.0   OLED                                                              05/17/2020 12:44:22 PAGE 4   
+
+ 179   1        unsigned char c=0,i=0,j=0;
+ 180   1              
+ 181   1        while (ch[j]!='\0')
+ 182   1        {    
+ 183   2          c =ch[j]-32;
+ 184   2          if(x>120){x=0;y++;}
+ 185   2          LCD_Set_Pos(x,y);    
+ 186   2          for(i=0;i<8;i++)     
+ 187   2            LCD_WrDat(F8X16[c*16+i]);
+ 188   2          LCD_Set_Pos(x,y+1);    
+ 189   2          for(i=0;i<8;i++)     
+ 190   2            LCD_WrDat(F8X16[c*16+i+8]);  
+ 191   2          x+=8;
+ 192   2          j++;
+ 193   2        }
+ 194   1      }
+ 195          
+ 196          
+ 197          void LCD_P8x16Str_1(unsigned char x,unsigned char y,unsigned char ch[])
+ 198          {
+ 199   1        unsigned char c=0,i=0,j=0;
+ 200   1              
+ 201   1        while (ch[j]!='\0')
+ 202   1        {    
+ 203   2          c =ch[j]-32;
+ 204   2          if(x>120){x=0;y++;}
+ 205   2          LCD_Set_Pos(x,y);    
+ 206   2          for(i=0;i<8;i++)     
+ 207   2            LCD_WrDat(~F8X16[c*16+i]);
+ 208   2          LCD_Set_Pos(x,y+1);    
+ 209   2          for(i=0;i<8;i++)     
+ 210   2            LCD_WrDat(~F8X16[c*16+i+8]);  
+ 211   2          x+=8;
+ 212   2          j++;
+ 213   2        }
+ 214   1      }
+ 215          
+ 216          //输出汉字字符串
+ 217          //void LCD_P14x16Ch(unsigned char x,unsigned char y,unsigned char N)
+ 218          //{
+ 219          //  unsigned char wm=0,ii = 0;
+ 220          //  unsigned int adder=28*N;      
+ 221          //    LCD_Set_Pos(x , y);
+ 222          //    for(wm = 0;wm < 14;wm++)               
+ 223          //    {
+ 224          //      LCD_WrDat(F14x16[adder]); 
+ 225          //      adder += 1;
+ 226          //    }      
+ 227          //    LCD_Set_Pos(x,y + 1); 
+ 228          //    for(wm = 0;wm < 14;wm++)          
+ 229          //    {
+ 230          //      LCD_WrDat(F14x16[adder]);
+ 231          //      adder += 1;
+ 232          //    }       
+ 233          //}
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    741    ----
+   CONSTANT SIZE    =   2072    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+C51 COMPILER V9.57.0.0   OLED                                                              05/17/2020 12:44:22 PAGE 5   
+
+   DATA SIZE        =   ----      21
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
